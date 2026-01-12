@@ -55,3 +55,11 @@ set_air_limits:
           min: 10
           max: 35
           unit_of_measurement: "°C"
+
+restart:
+  name: Restart Device
+  description: Restart the thermostat device.
+  target:
+    entity:
+      integration: terneo
+      domain: climate

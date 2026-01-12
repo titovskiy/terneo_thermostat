@@ -25,6 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 # Service schemas
 SERVICE_SET_FLOOR_LIMITS = "set_floor_limits"
 SERVICE_SET_AIR_LIMITS = "set_air_limits"
+SERVICE_RESTART = "restart"
 
 SERVICE_FLOOR_LIMITS_SCHEMA = vol.Schema(
     {
@@ -46,6 +47,7 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
     Platform.NUMBER,
     Platform.SELECT,
+    Platform.BUTTON,
 ]
 
 
@@ -152,6 +154,19 @@ async def async_register_services(hass: HomeAssistant) -> None:
             SERVICE_SET_AIR_LIMITS,
             handle_set_air_limits,
             schema=SERVICE_AIR_LIMITS_SCHEMA,
+        )
+
+    async def handle_restart(call: ServiceCall) -> None:
+        """Handle restart service call."""
+        for entry_id, data in hass.data[DOMAIN].items():
+            thermostat = data["thermostat"]
+            await hass.async_add_executor_job(thermostat.restart)
+
+    if not hass.services.has_service(DOMAIN, SERVICE_RESTART):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_RESTART,
+            handle_restart,
         )
 
 

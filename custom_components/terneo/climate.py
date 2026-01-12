@@ -71,13 +71,22 @@ class TerneoClimateEntity(CoordinatorEntity, ClimateEntity):
         self._entry = entry
         
         self._attr_unique_id = f"{thermostat.sn}_climate"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, thermostat.sn)},
-            "name": entry.title,
+
+    @property
+    def device_info(self):
+        """Return device info."""
+        info = {
+            "identifiers": {(DOMAIN, self._thermostat.sn)},
+            "name": self._entry.title,
             "manufacturer": MANUFACTURER,
-            "model": "OZ" if thermostat.is_new_version else "OZ (Legacy)",
-            "serial_number": thermostat.sn,
+            "model": "OZ" if self._thermostat.is_new_version else "OZ (Legacy)",
+            "serial_number": self._thermostat.sn,
         }
+        if self._thermostat.esp_firmware:
+            info["sw_version"] = self._thermostat.esp_firmware
+        if self._thermostat.mcu_firmware:
+            info["hw_version"] = self._thermostat.mcu_firmware
+        return info
 
     @property
     def current_temperature(self) -> float | None:

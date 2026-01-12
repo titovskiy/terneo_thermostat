@@ -55,7 +55,9 @@
       "sensor_type_display": { "name": "Тип датчика" },
       "ble_sensor_connected": { "name": "Беспроводной датчик" },
       "manual_floor_temp": { "name": "Уставка пола (ручной)" },
-      "manual_air_temp": { "name": "Уставка воздуха (ручной)" }
+      "manual_air_temp": { "name": "Уставка воздуха (ручной)" },
+      "esp_firmware": { "name": "Прошивка ESP" },
+      "mcu_firmware": { "name": "Прошивка MCU" }
     },
     "switch": {
       "power": { "name": "Питание" },
@@ -113,6 +115,9 @@
           "47k": "47 кОм"
         }
       }
+    },
+    "button": {
+      "restart": { "name": "Перезагрузка" }
     }
   },
   "services": {
@@ -143,6 +148,10 @@
           "description": "Максимальная температура воздуха в °C"
         }
       }
+    },
+    "restart": {
+      "name": "Перезагрузить устройство",
+      "description": "Перезагрузить термостат."
     }
   }
 }

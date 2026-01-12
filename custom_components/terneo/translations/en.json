@@ -55,7 +55,9 @@
       "sensor_type_display": { "name": "Sensor Type" },
       "ble_sensor_connected": { "name": "Wireless Sensor" },
       "manual_floor_temp": { "name": "Manual Floor Setpoint" },
-      "manual_air_temp": { "name": "Manual Air Setpoint" }
+      "manual_air_temp": { "name": "Manual Air Setpoint" },
+      "esp_firmware": { "name": "ESP Firmware" },
+      "mcu_firmware": { "name": "MCU Firmware" }
     },
     "switch": {
       "power": { "name": "Power" },
@@ -113,6 +115,9 @@
           "47k": "47 kΩ"
         }
       }
+    },
+    "button": {
+      "restart": { "name": "Restart" }
     }
   },
   "services": {
@@ -143,6 +148,10 @@
           "description": "Maximum air temperature in °C"
         }
       }
+    },
+    "restart": {
+      "name": "Restart Device",
+      "description": "Restart the thermostat device."
     }
   }
 }
