@@ -1,0 +1,57 @@
+set_floor_limits:
+  name: Set Floor Temperature Limits
+  description: Set the minimum and maximum floor temperature limits.
+  target:
+    entity:
+      integration: terneo
+      domain: climate
+  fields:
+    lower:
+      name: Minimum
+      description: Minimum floor temperature in °C
+      required: true
+      example: 5
+      selector:
+        number:
+          min: 5
+          max: 40
+          unit_of_measurement: "°C"
+    upper:
+      name: Maximum
+      description: Maximum floor temperature in °C
+      required: true
+      example: 45
+      selector:
+        number:
+          min: 10
+          max: 45
+          unit_of_measurement: "°C"
+
+set_air_limits:
+  name: Set Air Temperature Limits
+  description: Set the minimum and maximum air temperature limits (new version only).
+  target:
+    entity:
+      integration: terneo
+      domain: climate
+  fields:
+    lower:
+      name: Minimum
+      description: Minimum air temperature in °C
+      required: true
+      example: 5
+      selector:
+        number:
+          min: 5
+          max: 30
+          unit_of_measurement: "°C"
+    upper:
+      name: Maximum
+      description: Maximum air temperature in °C
+      required: true
+      example: 35
+      selector:
+        number:
+          min: 10
+          max: 35
+          unit_of_measurement: "°C"

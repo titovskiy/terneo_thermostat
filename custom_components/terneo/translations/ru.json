@@ -1,0 +1,148 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Подключение к термостату Terneo",
+        "description": "Введите данные для подключения к вашему термостату Terneo/Welrok.",
+        "data": {
+          "host": "IP-адрес",
+          "serial": "Серийный номер"
+        },
+        "data_description": {
+          "host": "IP-адрес термостата",
+          "serial": "Серийный номер устройства (можно найти в настройках устройства или на этикетке)"
+        }
+      },
+      "options": {
+        "title": "Настройка устройства",
+        "description": "Обнаружено устройство:\n- Серийный номер: {serial}\n- Тип: {device_type}",
+        "data": {
+          "name": "Название устройства"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удается подключиться к устройству. Проверьте IP-адрес и серийный номер.",
+      "invalid_auth": "Неверные учетные данные.",
+      "unknown": "Произошла непредвиденная ошибка."
+    },
+    "abort": {
+      "already_configured": "Это устройство уже настроено."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки Terneo",
+        "description": "Настройте параметры интеграции.",
+        "data": {
+          "scan_interval": "Интервал обновления (секунды)",
+          "show_advanced_sensors": "Показывать расширенные сенсоры"
+        },
+        "data_description": {
+          "scan_interval": "Как часто опрашивать устройство для обновлений (10-300 секунд)",
+          "show_advanced_sensors": "Включить дополнительные диагностические сенсоры"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "floor_temperature": { "name": "Температура пола" },
+      "air_temperature": { "name": "Температура воздуха" },
+      "setpoint": { "name": "Целевая температура" },
+      "relay_on_time_limit": { "name": "Лимит непрерывного нагрева" },
+      "sensor_type_display": { "name": "Тип датчика" },
+      "ble_sensor_connected": { "name": "Беспроводной датчик" },
+      "manual_floor_temp": { "name": "Уставка пола (ручной)" },
+      "manual_air_temp": { "name": "Уставка воздуха (ручной)" }
+    },
+    "switch": {
+      "power": { "name": "Питание" },
+      "children_lock": { "name": "Защита от детей" },
+      "cooling_mode": { "name": "Режим охлаждения" },
+      "pre_control": { "name": "Предварительный нагрев" },
+      "use_night_brightness": { "name": "Ночная яркость" },
+      "window_open_control": { "name": "Обнаружение открытого окна" },
+      "nc_contact_control": { "name": "Инвертированное реле (NC)" },
+      "lan_block": { "name": "Блокировка LAN API" },
+      "cloud_block": { "name": "Блокировка облака" }
+    },
+    "number": {
+      "brightness": { "name": "Яркость дисплея" },
+      "hysteresis": { "name": "Гистерезис" },
+      "floor_correction": { "name": "Коррекция датчика пола" },
+      "air_correction": { "name": "Коррекция датчика воздуха" },
+      "prop_koef": { "name": "Пропорциональный коэффициент" },
+      "upper_floor_limit": { "name": "Макс. температура пола" },
+      "lower_floor_limit": { "name": "Мин. температура пола" },
+      "upper_air_limit": { "name": "Макс. температура воздуха" },
+      "lower_air_limit": { "name": "Мин. температура воздуха" },
+      "min_temp_advanced": { "name": "Мин. лимит пола (режим воздух)" },
+      "max_temp_advanced": { "name": "Макс. лимит пола (режим воздух)" },
+      "ble_sensor_interval": { "name": "Интервал опроса беспр. датчика" },
+      "upper_warning_temp": { "name": "Верхняя аварийная температура" },
+      "lower_warning_temp": { "name": "Нижняя аварийная температура" },
+      "power": { "name": "Подключенная мощность" },
+      "night_bright_start": { "name": "Начало ночного режима" },
+      "night_bright_end": { "name": "Конец ночного режима" },
+      "button_minus_cor": { "name": "Чувствительность кнопки минус" },
+      "button_menu_cor": { "name": "Чувствительность кнопки меню" },
+      "button_plus_cor": { "name": "Чувствительность кнопки плюс" },
+      "away_floor_temperature": { "name": "Температура пола (отъезд)" },
+      "away_air_temperature": { "name": "Температура воздуха (отъезд)" }
+    },
+    "select": {
+      "control_type": {
+        "name": "Тип управления",
+        "state": {
+          "floor": "По датчику пола",
+          "air": "По датчику воздуха",
+          "air_with_floor_limit": "По воздуху с ограничением по полу"
+        }
+      },
+      "sensor_type": {
+        "name": "Тип датчика",
+        "state": {
+          "4.7k": "4,7 кОм",
+          "6.8k": "6,8 кОм",
+          "10k": "10 кОм",
+          "12k": "12 кОм",
+          "15k": "15 кОм",
+          "33k": "33 кОм",
+          "47k": "47 кОм"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_floor_limits": {
+      "name": "Установить пределы температуры пола",
+      "description": "Установить минимальную и максимальную температуру пола.",
+      "fields": {
+        "lower": {
+          "name": "Минимум",
+          "description": "Минимальная температура пола в °C"
+        },
+        "upper": {
+          "name": "Максимум",
+          "description": "Максимальная температура пола в °C"
+        }
+      }
+    },
+    "set_air_limits": {
+      "name": "Установить пределы температуры воздуха",
+      "description": "Установить минимальную и максимальную температуру воздуха (только для новой версии).",
+      "fields": {
+        "lower": {
+          "name": "Минимум",
+          "description": "Минимальная температура воздуха в °C"
+        },
+        "upper": {
+          "name": "Максимум",
+          "description": "Максимальная температура воздуха в °C"
+        }
+      }
+    }
+  }
+}

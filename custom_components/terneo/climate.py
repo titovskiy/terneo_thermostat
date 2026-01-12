@@ -1,182 +1,258 @@
-"""Terneo Thermostat Support."""
-import logging
+"""Climate platform for Terneo/Welrok thermostat."""
+from __future__ import annotations
 
-from .thermostat import Thermostat
-import requests
-import voluptuous as vol
-from typing import Optional
-from homeassistant.const import UnitOfTemperature
+import logging
+from typing import Any
 
 from homeassistant.components.climate import (
-    PLATFORM_SCHEMA,
     ClimateEntity,
     ClimateEntityFeature,
     HVACAction,
-    HVACMode
-    )
-from homeassistant.const import (
-    ATTR_TEMPERATURE,
-    CONF_HOST,
-    CONF_NAME,
-    CONF_PASSWORD,
-    CONF_PORT,
-    CONF_USERNAME,
+    HVACMode,
 )
-import homeassistant.helpers.config_validation as cv
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import DOMAIN, MANUFACTURER, ControlType, OperationMode
+from .thermostat import TerneoThermostat
 
 _LOGGER = logging.getLogger(__name__)
 
-CONF_SERIAL = "serial"
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_SERIAL): cv.string,
-        vol.Required(CONF_HOST): cv.string,
-        vol.Optional(CONF_NAME, default="Terneo"): cv.string,
-        vol.Optional(CONF_PORT, default=80): cv.port,
-        vol.Inclusive(CONF_USERNAME, "authentication"): cv.string,
-        vol.Inclusive(CONF_PASSWORD, "authentication"): cv.string,
-    }
+SUPPORT_FLAGS = (
+    ClimateEntityFeature.TARGET_TEMPERATURE
+    | ClimateEntityFeature.TURN_ON
+    | ClimateEntityFeature.TURN_OFF
+    | ClimateEntityFeature.PRESET_MODE
 )
 
-SUPPORT_FLAGS = (ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF)
-SUPPORT_HVAC = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
+HVAC_MODES = [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.AUTO]
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the Terneo platform."""
-    serialnumber = config.get(CONF_SERIAL)
-    name = config.get(CONF_NAME)
-    host = config.get(CONF_HOST)
-    port = config.get(CONF_PORT)
-    username = config.get(CONF_USERNAME)
-    password = config.get(CONF_PASSWORD)
-
-    try:
-        therm = Thermostat(serialnumber, host, port=port, username=username, password=password)
-    except (ValueError, AssertionError, requests.RequestException):
-        return False
-
-    add_entities((ThermostatDevice(therm, name),), True)
+PRESET_SCHEDULE = "schedule"
+PRESET_MANUAL = "manual"
+PRESET_MODES = [PRESET_SCHEDULE, PRESET_MANUAL]
 
 
-class ThermostatDevice(ClimateEntity):
-    """Interface class for the thermostat module."""
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Terneo climate entity from a config entry."""
+    data = hass.data[DOMAIN][entry.entry_id]
+    coordinator = data["coordinator"]
+    thermostat = data["thermostat"]
 
-    def __init__(self, thermostat, name):
-        """Initialize the device."""
-        self._name = name
-        self.thermostat = thermostat
+    async_add_entities([TerneoClimateEntity(coordinator, thermostat, entry)])
 
-        # set up internal state varS
-        self._available = False
-        self._state = None
-        self._temperature = None
-        self._setpoint = None
-        self._mode = None
+
+class TerneoClimateEntity(CoordinatorEntity, ClimateEntity):
+    """Terneo climate entity."""
+
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_target_temperature_step = 1
+    _attr_supported_features = SUPPORT_FLAGS
+    _attr_hvac_modes = HVAC_MODES
+    _attr_preset_modes = PRESET_MODES
+
+    def __init__(
+        self,
+        coordinator,
+        thermostat: TerneoThermostat,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the climate entity."""
+        super().__init__(coordinator)
+        self._thermostat = thermostat
+        self._entry = entry
+        
+        self._attr_unique_id = f"{thermostat.sn}_climate"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, thermostat.sn)},
+            "name": entry.title,
+            "manufacturer": MANUFACTURER,
+            "model": "OZ" if thermostat.is_new_version else "OZ (Legacy)",
+            "serial_number": thermostat.sn,
+        }
 
     @property
-    def supported_features(self):
-        """Return the list of supported features."""
-        return SUPPORT_FLAGS
+    def current_temperature(self) -> float | None:
+        """Return the current temperature."""
+        # Return air temperature for new version if control type is air
+        if self._thermostat.is_new_version:
+            control_type = self._thermostat.control_type
+            if control_type in [ControlType.AIR, ControlType.AIR_WITH_FLOOR_LIMIT]:
+                return self._thermostat.air_temperature
+        return self._thermostat.floor_temperature
 
     @property
-    def hvac_mode(self):
-        """Return hvac operation ie. heat, cool mode.
-        Need to be one of HVAC_MODE_*.
-        """
+    def target_temperature(self) -> float | None:
+        """Return the target temperature."""
+        return self._thermostat.setpoint
 
-        if self._mode == -1:
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum temperature."""
+        control_type = self._thermostat.control_type or ControlType.FLOOR
+        
+        if self._thermostat.is_new_version and control_type != ControlType.FLOOR:
+            limit = self._thermostat.lower_air_limit
+            return float(limit) if limit is not None else 5.0
+        
+        limit = self._thermostat.lower_limit
+        return float(limit) if limit is not None else 5.0
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum temperature."""
+        control_type = self._thermostat.control_type or ControlType.FLOOR
+        
+        if self._thermostat.is_new_version and control_type != ControlType.FLOOR:
+            limit = self._thermostat.upper_air_limit
+            return float(limit) if limit is not None else 35.0
+        
+        limit = self._thermostat.upper_limit
+        return float(limit) if limit is not None else 45.0
+
+    @property
+    def hvac_mode(self) -> HVACMode:
+        """Return current HVAC mode."""
+        mode = self._thermostat.mode
+        
+        if mode == -1 or not self._thermostat.power_on:
             return HVACMode.OFF
-        if self._mode == 3:
-            return HVACMode.HEAT
-        return HVACMode.AUTO
+        
+        # Check if in cooling mode
+        if self._thermostat.cooling_mode:
+            return HVACMode.COOL
+        
+        # Schedule mode = AUTO, Manual mode = HEAT
+        if mode == OperationMode.SCHEDULE:
+            return HVACMode.AUTO
+        
+        return HVACMode.HEAT
 
     @property
-    def hvac_modes(self):
-        """Return the list of available hvac operation modes.
-        Need to be a subset of HVAC_MODES.
-        """
-        return SUPPORT_HVAC
-
-    @property
-    def name(self):
-        """Return the name of this Thermostat."""
-        return self._name
-
-    @property
-    def temperature_unit(self):
-        """Return the unit of measurement used by the platform."""
-        return UnitOfTemperature.CELSIUS
-
-    @property
-    def hvac_action(self):
-        """Return current hvac i.e. heat, cool, idle."""
-        if self._mode == -1:
+    def hvac_action(self) -> HVACAction:
+        """Return current HVAC action."""
+        if not self._thermostat.power_on or self._thermostat.mode == -1:
             return HVACAction.OFF
-        if self._state:
+        
+        if self._thermostat.relay_state:
+            if self._thermostat.cooling_mode:
+                return HVACAction.COOLING
             return HVACAction.HEATING
+        
         return HVACAction.IDLE
 
     @property
-    def current_temperature(self):
-        """Return the current temperature."""
-        return self._temperature
+    def preset_mode(self) -> str | None:
+        """Return current preset mode."""
+        mode = self._thermostat.mode
+        
+        if mode == OperationMode.SCHEDULE:
+            return PRESET_SCHEDULE
+        return PRESET_MANUAL
 
     @property
-    def target_temperature(self):
-        """Return the temperature we try to reach."""
-        return self._setpoint
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra state attributes."""
+        attrs = {
+            "serial_number": self._thermostat.sn,
+            "device_type": "new" if self._thermostat.is_new_version else "old",
+            "control_type": self._get_control_type_name(),
+            "relay_state": self._thermostat.relay_state,
+            "floor_temperature": self._thermostat.floor_temperature,
+        }
+        
+        if self._thermostat.is_new_version:
+            attrs["air_temperature"] = self._thermostat.air_temperature
+        
+        if self._thermostat.hysteresis is not None:
+            attrs["hysteresis"] = self._thermostat.hysteresis
+        
+        if self._thermostat.power_watts is not None:
+            attrs["power_watts"] = self._thermostat.power_watts
+        
+        return attrs
 
-    @property
-    def target_temperature_step(self) -> Optional[float]:
-        """Return the supported step of target temperature."""
-        return 1.0
+    def _get_control_type_name(self) -> str:
+        """Get human-readable control type name."""
+        control_type = self._thermostat.control_type
+        if control_type == ControlType.FLOOR:
+            return "floor"
+        elif control_type == ControlType.AIR:
+            return "air"
+        elif control_type == ControlType.AIR_WITH_FLOOR_LIMIT:
+            return "air_with_floor_limit"
+        return "unknown"
 
-    @property
-    def max_temp(self) -> Optional[int]:
-        """Return the maximum temperature."""
-        return 45
+    async def async_set_temperature(self, **kwargs: Any) -> None:
+        """Set new target temperature."""
+        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
+            return
+        
+        await self.hass.async_add_executor_job(
+            self._thermostat.set_setpoint, temperature
+        )
+        await self.coordinator.async_request_refresh()
 
-    @property
-    def min_temp(self) -> Optional[int]:
-        """Return the minimum temperature."""
-        return 5
-
-    @property
-    def unique_id(self):
-        """Return unique ID based on Terneo serial number."""
-        return self.thermostat.sn
-    
-    @property
-    def available(self):
-        """Return available status based on device connectivity"""
-        return self.thermostat.available
-
-    def turn_on(self):
-        self.thermostat.turn_on()
-
-    def turn_off(self):
-        self.thermostat.turn_off()
-
-    def set_hvac_mode(self, hvac_mode):
-        """Set new target hvac mode."""
-        if hvac_mode == HVACMode.AUTO:
-            self.thermostat.mode = 0
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        """Set new HVAC mode."""
+        if hvac_mode == HVACMode.OFF:
+            await self.hass.async_add_executor_job(self._thermostat.turn_off)
         elif hvac_mode == HVACMode.HEAT:
-            self.thermostat.mode = 1
-        elif hvac_mode == HVACMode.OFF:
-            self.thermostat.turn_off()
+            await self.hass.async_add_executor_job(self._thermostat.turn_on)
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_cooling_mode, False
+            )
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_mode, OperationMode.MANUAL
+            )
+        elif hvac_mode == HVACMode.COOL:
+            await self.hass.async_add_executor_job(self._thermostat.turn_on)
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_cooling_mode, True
+            )
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_mode, OperationMode.MANUAL
+            )
+        elif hvac_mode == HVACMode.AUTO:
+            await self.hass.async_add_executor_job(self._thermostat.turn_on)
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_mode, OperationMode.SCHEDULE
+            )
+        
+        await self.coordinator.async_request_refresh()
 
-    def set_temperature(self, **kwargs):
-        """Set the temperature."""
-        temp = kwargs.get(ATTR_TEMPERATURE)
-        self.thermostat.setpoint = temp
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set new preset mode."""
+        if preset_mode == PRESET_SCHEDULE:
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_mode, OperationMode.SCHEDULE
+            )
+        else:
+            await self.hass.async_add_executor_job(
+                self._thermostat.set_mode, OperationMode.MANUAL
+            )
+        
+        await self.coordinator.async_request_refresh()
 
-    def update(self):
-        """Update local state."""
-        self.thermostat.update()
-        self._setpoint = self.thermostat.setpoint
-        self._temperature = self.thermostat.temperature
-        self._state = self.thermostat.state
-        self._mode = self.thermostat.mode
-        self._available = self.thermostat.available
+    async def async_turn_on(self) -> None:
+        """Turn on the thermostat."""
+        await self.hass.async_add_executor_job(self._thermostat.turn_on)
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        """Turn off the thermostat."""
+        await self.hass.async_add_executor_job(self._thermostat.turn_off)
+        await self.coordinator.async_request_refresh()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.async_write_ha_state()
