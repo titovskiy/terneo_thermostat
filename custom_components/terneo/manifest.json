@@ -1,11 +1,12 @@
 {
   "domain": "terneo",
   "name": "Terneo/Welrok Thermostat",
-  "documentation": "https://github.com/Makave1i/terneo_thermostat",
+  "documentation": "https://github.com/titovskiy/terneo_thermostat",
   "version": "2.0.0",
   "codeowners": [
     "@Makave1i",
-    "@DevRedOWL"
+    "@DevRedOWL",
+    "@titovskiy"
   ],
   "config_flow": true,
   "iot_class": "local_polling",
