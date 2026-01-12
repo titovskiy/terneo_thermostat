@@ -151,3 +151,4 @@ This project is licensed under the MIT License.
 
 - Original integration by [@Makave1i](https://github.com/Makave1i)
 - Extended by [@DevRedOWL](https://github.com/DevRedOWL)
+- Rewrited by [@titovskiy](https://github.com/titovskiy)
