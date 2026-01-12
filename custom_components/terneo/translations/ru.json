@@ -55,9 +55,7 @@
       "sensor_type_display": { "name": "Тип датчика" },
       "ble_sensor_connected": { "name": "Беспроводной датчик" },
       "manual_floor_temp": { "name": "Уставка пола (ручной)" },
-      "manual_air_temp": { "name": "Уставка воздуха (ручной)" },
-      "esp_firmware": { "name": "Прошивка ESP" },
-      "mcu_firmware": { "name": "Прошивка MCU" }
+      "manual_air_temp": { "name": "Уставка воздуха (ручной)" }
     },
     "switch": {
       "power": { "name": "Питание" },

@@ -55,9 +55,7 @@
       "sensor_type_display": { "name": "Sensor Type" },
       "ble_sensor_connected": { "name": "Wireless Sensor" },
       "manual_floor_temp": { "name": "Manual Floor Setpoint" },
-      "manual_air_temp": { "name": "Manual Air Setpoint" },
-      "esp_firmware": { "name": "ESP Firmware" },
-      "mcu_firmware": { "name": "MCU Firmware" }
+      "manual_air_temp": { "name": "Manual Air Setpoint" }
     },
     "switch": {
       "power": { "name": "Power" },

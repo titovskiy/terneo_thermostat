@@ -116,22 +116,6 @@ SENSOR_DESCRIPTIONS: tuple[TerneoSensorEntityDescription, ...] = (
         new_version_only=True,
         entity_registry_enabled_default=False,
     ),
-    TerneoSensorEntityDescription(
-        key="esp_firmware",
-        translation_key="esp_firmware",
-        name="ESP Firmware",
-        icon="mdi:chip",
-        value_fn=lambda t: t.esp_firmware,
-        entity_registry_enabled_default=False,
-    ),
-    TerneoSensorEntityDescription(
-        key="mcu_firmware",
-        translation_key="mcu_firmware",
-        name="MCU Firmware",
-        icon="mdi:chip",
-        value_fn=lambda t: t.mcu_firmware,
-        entity_registry_enabled_default=False,
-    ),
 )
 
 

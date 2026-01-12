@@ -54,10 +54,6 @@ class TerneoThermostat:
         self._parameters: dict[int, Any] = {}
         self._status: dict[str, Any] = {}
         
-        # Device info
-        self._esp_firmware: str | None = None
-        self._mcu_firmware: str | None = None
-        
         # Derived state
         self._setpoint: float | None = None
         self._floor_temperature: float | None = None
@@ -134,17 +130,6 @@ class TerneoThermostat:
             self._status = result
         return result
 
-    def get_device_info(self) -> dict | bool:
-        """Get device info including firmware versions."""
-        result = self._post(endpoint="test", json={"cmd": "info"})
-        if result and result.get("success") == "true":
-            if "espfw" in result:
-                self._esp_firmware = result["espfw"]
-            if "mcufw" in result:
-                self._mcu_firmware = result["mcufw"]
-            return result
-        return False
-
     def restart(self) -> bool:
         """Restart the device."""
         result = self._post(endpoint="test", json={"cmd": "restart"})
@@ -199,16 +184,6 @@ class TerneoThermostat:
     def is_new_version(self) -> bool:
         """Return if device is new version with air sensor."""
         return self._is_new_version
-
-    @property
-    def esp_firmware(self) -> str | None:
-        """Return ESP firmware version."""
-        return self._esp_firmware
-
-    @property
-    def mcu_firmware(self) -> str | None:
-        """Return MCU firmware version."""
-        return self._mcu_firmware
 
     @property
     def power_on(self) -> bool | None:
@@ -783,10 +758,6 @@ class TerneoThermostat:
         status_result = self.get_status()
         if not status_result:
             return False
-        
-        # Get device info (firmware) - only if not already fetched
-        if self._esp_firmware is None:
-            self.get_device_info()
         
         # Parse status
         self._parse_status(status_result)
