@@ -12,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature, UnitOfPower, UnitOfTime
+from homeassistant.const import UnitOfTemperature, UnitOfPower, UnitOfTime, UnitOfEnergy
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -115,6 +115,46 @@ SENSOR_DESCRIPTIONS: tuple[TerneoSensorEntityDescription, ...] = (
         value_fn=lambda t: t.manual_air_temperature,
         new_version_only=True,
         entity_registry_enabled_default=False,
+    ),
+    TerneoSensorEntityDescription(
+        key="heating_energy",
+        translation_key="heating_energy",
+        name="Heating Energy",
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        icon="mdi:lightning-bolt",
+        value_fn=lambda t: t.heating_energy_kwh,
+        available_fn=lambda t: t.power_watts is not None and t.power_watts > 0,
+    ),
+    TerneoSensorEntityDescription(
+        key="heating_time",
+        translation_key="heating_time",
+        name="Heating Time",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        icon="mdi:timer",
+        value_fn=lambda t: t.heating_time_hours,
+        available_fn=lambda t: t.power_watts is not None and t.power_watts > 0,
+    ),
+    TerneoSensorEntityDescription(
+        key="current_power",
+        translation_key="current_power",
+        name="Current Power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        icon="mdi:flash",
+        value_fn=lambda t: t.power_watts if t.relay_state else 0,
+        available_fn=lambda t: t.power_watts is not None and t.power_watts > 0,
+    ),
+    TerneoSensorEntityDescription(
+        key="heating_active",
+        translation_key="heating_active",
+        name="Heating Active",
+        icon="mdi:radiator",
+        value_fn=lambda t: "On" if t.relay_state else "Off",
     ),
 )
 

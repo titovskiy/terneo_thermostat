@@ -30,6 +30,14 @@ The integration automatically detects the device version during setup.
 - Hysteresis
 - Sensor corrections
 
+### Energy Monitoring
+- **Heating Energy** - Accumulated energy consumption in kWh (compatible with Energy Dashboard)
+- **Heating Time** - Total heating time in hours
+- **Current Power** - Current power consumption (power when heating is active, 0 when idle)
+- **Heating Active** - Relay state indicator (On/Off)
+
+> **Note:** Energy sensors require the heater power to be configured in the device settings.
+
 ### Switches
 - Power on/off
 - Children lock

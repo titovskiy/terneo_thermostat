@@ -62,6 +62,11 @@ class TerneoThermostat:
         self._relay_state: bool | None = None
         self._power_on: bool | None = None
         
+        # Energy tracking
+        self._last_relay_update: float | None = None
+        self._heating_energy_kwh: float = 0.0  # Accumulated energy in kWh
+        self._heating_time_seconds: float = 0.0  # Accumulated heating time in seconds
+        
         # Verify connection
         try:
             r = requests.get(
@@ -795,9 +800,46 @@ class TerneoThermostat:
             else:
                 self._mode = mode_value
         
-        # Relay state
+        # Relay state and energy tracking
         if "f.0" in data:
-            self._relay_state = int(data["f.0"]) == 1
+            new_relay_state = int(data["f.0"]) == 1
+            self._update_energy_tracking(new_relay_state)
+            self._relay_state = new_relay_state
+
+    def _update_energy_tracking(self, new_relay_state: bool) -> None:
+        """Update energy consumption tracking based on relay state."""
+        current_time = time.time()
+        
+        # If we have a previous measurement and relay was ON, calculate energy
+        if self._last_relay_update is not None and self._relay_state is True:
+            elapsed_seconds = current_time - self._last_relay_update
+            
+            # Sanity check: skip if elapsed time is too long (>5 min) or negative
+            # This prevents accumulating large errors after restarts/gaps
+            if 0 < elapsed_seconds <= 300:
+                power_watts = self.power_watts
+                if power_watts and power_watts > 0:
+                    # Calculate energy in kWh: (W * seconds) / (1000 * 3600)
+                    energy_kwh = (power_watts * elapsed_seconds) / 3600000.0
+                    self._heating_energy_kwh += energy_kwh
+                    self._heating_time_seconds += elapsed_seconds
+        
+        self._last_relay_update = current_time
+
+    @property
+    def heating_energy_kwh(self) -> float:
+        """Total energy consumed by heating in kWh (since integration start)."""
+        return round(self._heating_energy_kwh, 3)
+
+    @property
+    def heating_time_hours(self) -> float:
+        """Total heating time in hours (since integration start)."""
+        return round(self._heating_time_seconds / 3600.0, 2)
+
+    def reset_energy_counter(self) -> None:
+        """Reset energy and time counters."""
+        self._heating_energy_kwh = 0.0
+        self._heating_time_seconds = 0.0
 
 
 # Backward compatibility alias

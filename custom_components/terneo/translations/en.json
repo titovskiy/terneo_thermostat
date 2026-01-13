@@ -55,7 +55,11 @@
       "sensor_type_display": { "name": "Sensor Type" },
       "ble_sensor_connected": { "name": "Wireless Sensor" },
       "manual_floor_temp": { "name": "Manual Floor Setpoint" },
-      "manual_air_temp": { "name": "Manual Air Setpoint" }
+      "manual_air_temp": { "name": "Manual Air Setpoint" },
+      "heating_energy": { "name": "Heating Energy" },
+      "heating_time": { "name": "Heating Time" },
+      "current_power": { "name": "Current Power" },
+      "heating_active": { "name": "Heating Active" }
     },
     "switch": {
       "power": { "name": "Power" },

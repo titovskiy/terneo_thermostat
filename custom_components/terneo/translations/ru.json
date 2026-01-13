@@ -55,7 +55,11 @@
       "sensor_type_display": { "name": "Тип датчика" },
       "ble_sensor_connected": { "name": "Беспроводной датчик" },
       "manual_floor_temp": { "name": "Уставка пола (ручной)" },
-      "manual_air_temp": { "name": "Уставка воздуха (ручной)" }
+      "manual_air_temp": { "name": "Уставка воздуха (ручной)" },
+      "heating_energy": { "name": "Потреблённая энергия" },
+      "heating_time": { "name": "Время нагрева" },
+      "current_power": { "name": "Текущая мощность" },
+      "heating_active": { "name": "Нагрев активен" }
     },
     "switch": {
       "power": { "name": "Питание" },
