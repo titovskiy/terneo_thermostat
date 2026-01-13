@@ -19,6 +19,7 @@ from .const import (
     DEVICE_TYPE_OLD,
     DEVICE_TYPE_NEW,
     DEFAULT_NAME,
+    DEFAULT_TIMEOUT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -208,6 +209,10 @@ class TerneoOptionsFlowHandler(config_entries.OptionsFlow):
                         "scan_interval",
                         default=self.config_entry.options.get("scan_interval", 30),
                     ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                    vol.Optional(
+                        "timeout",
+                        default=self.config_entry.options.get("timeout", DEFAULT_TIMEOUT),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=3, max=120)),
                     vol.Optional(
                         "show_advanced_sensors",
                         default=self.config_entry.options.get("show_advanced_sensors", False),

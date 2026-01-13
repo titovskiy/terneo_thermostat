@@ -15,6 +15,7 @@ DEVICE_TYPE_NEW = "new"  # oz с датчиком воздуха (от июня 
 # Default values
 DEFAULT_NAME = "Terneo"
 DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_TIMEOUT = 5
 
 # API Commands
 CMD_GET_PARAMS = 1

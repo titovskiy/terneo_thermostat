@@ -14,6 +14,7 @@ from .const import (
     DEVICE_TYPE_NEW,
     CMD_GET_PARAMS,
     CMD_GET_STATUS,
+    DEFAULT_TIMEOUT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +34,8 @@ class TerneoThermostat:
         Hostname or IP address.
     device_type : str, optional
         Device type: 'old' or 'new'
+    timeout : int, optional
+        Connection timeout in seconds (default: 5)
     """
 
     def __init__(
@@ -40,11 +43,13 @@ class TerneoThermostat:
         serial_number: str,
         host: str,
         device_type: str = DEVICE_TYPE_OLD,
+        timeout: int = DEFAULT_TIMEOUT,
     ):
         """Initialize the thermostat."""
         self.sn = serial_number
         self.device_type = device_type
         self._is_new_version = device_type == DEVICE_TYPE_NEW
+        self._timeout = timeout
         
         self._base_url = f"http://{host}/{{endpoint}}.cgi"
         self._last_request = time.time()
@@ -71,7 +76,7 @@ class TerneoThermostat:
         try:
             r = requests.get(
                 self._base_url.format(endpoint="api.html")[:-4],
-                timeout=5
+                timeout=self._timeout
             )
             if r.status_code == 200:
                 self._available = True
@@ -94,7 +99,7 @@ class TerneoThermostat:
             time.sleep(1)
 
         try:
-            r = requests.post(self._get_url(endpoint), timeout=5, **kwergs)
+            r = requests.post(self._get_url(endpoint), timeout=self._timeout, **kwergs)
         except Exception as e:
             self._available = False
             self._last_request = time.time()

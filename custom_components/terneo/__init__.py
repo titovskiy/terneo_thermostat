@@ -16,6 +16,7 @@ from .const import (
     CONF_SERIAL,
     CONF_DEVICE_TYPE,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TIMEOUT,
     DEVICE_TYPE_OLD,
 )
 from .thermostat import TerneoThermostat
@@ -55,6 +56,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Terneo thermostat from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
+    # Get options
+    scan_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
+    timeout = entry.options.get("timeout", DEFAULT_TIMEOUT)
+
     # Create thermostat instance
     try:
         thermostat = await hass.async_add_executor_job(
@@ -62,14 +67,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 serial_number=entry.data[CONF_SERIAL],
                 host=entry.data[CONF_HOST],
                 device_type=entry.data.get(CONF_DEVICE_TYPE, DEVICE_TYPE_OLD),
+                timeout=timeout,
             )
         )
     except Exception as err:
         _LOGGER.error("Failed to connect to Terneo thermostat: %s", err)
         return False
-
-    # Get scan interval from options
-    scan_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
 
     # Create update coordinator
     async def async_update_data():
